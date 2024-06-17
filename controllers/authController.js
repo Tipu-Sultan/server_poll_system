@@ -40,7 +40,6 @@ exports.login = (req, res) => {
         jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
             if (err) throw err;
 
-            // Remove the password from the user object before sending it in the response
             const { password, ...userWithoutPassword } = user;
 
             res.json({ token, user: userWithoutPassword });

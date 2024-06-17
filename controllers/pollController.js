@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-// Create Poll
+
 exports.createPoll = (req, res) => {
     if (req.body.accessRole !== 'Institute') return res.status(403).send({ message: 'Forbidden' });
 
@@ -20,7 +20,6 @@ exports.createPoll = (req, res) => {
     });
 };
 
-// Get All Polls
 exports.getAllPolls = (req, res) => {
     db.query(`
         SELECT 
@@ -28,14 +27,29 @@ exports.getAllPolls = (req, res) => {
             polls.question, 
             polls.role,
             polls.createdBy,
-            CONCAT('[', GROUP_CONCAT(JSON_OBJECT('optionText', poll_options.optionText)), ']') AS options 
+            CONCAT(
+                '[', 
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'optionText', poll_options.optionText, 
+                        'votes', COALESCE(vote_counts.votes, 0)
+                    )
+                ), 
+                ']'
+            ) AS options 
         FROM polls 
         JOIN poll_options ON polls.id = poll_options.pollId 
+        LEFT JOIN (
+            SELECT 
+                optionId, 
+                COUNT(*) AS votes 
+            FROM user_votes 
+            GROUP BY optionId
+        ) AS vote_counts ON poll_options.id = vote_counts.optionId 
         GROUP BY polls.id, polls.question, polls.role
     `, (err, results) => {
         if (err) return res.status(500).send(err);
 
-        // Parse options from string to JSON
         const formattedResults = results.map(result => ({
             id: result.id,
             question: result.question,
@@ -49,7 +63,7 @@ exports.getAllPolls = (req, res) => {
 };
 
 
-// Get Polls by Role
+
 exports.getPollsByRole = (req, res) => {
     const { role, questionId } = req.params;
     // Use JOIN to fetch data from both tables based on role and questionId, including vote count
@@ -73,7 +87,6 @@ exports.getPollsByRole = (req, res) => {
             return res.status(404).json({ error: 'Polls not found' });
         }
 
-        // Format data as needed
         const formattedData = {
             question: {
                 id: results[0].poll_id,
@@ -92,8 +105,6 @@ exports.getPollsByRole = (req, res) => {
 };
 
 
-
-// Vote on Poll
 exports.vote = (req, res) => {
     const { pollId, optionId } = req.body;
     const userId = req.user.id;
@@ -128,7 +139,6 @@ exports.vote = (req, res) => {
 
 
 
-// Delete Poll
 exports.deletePoll = (req, res) => {
     const pollId = req.params.id;
 

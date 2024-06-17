@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const cors = require('cors'); // Import CORS package
+const cors = require('cors'); 
 const db = require('./config/db');
 
 dotenv.config();
@@ -11,7 +11,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Enable CORS for all origins
 app.use(cors());
 
 app.use('/api/auth', require('./routes/authRoutes'));
